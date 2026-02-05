@@ -65,7 +65,7 @@ export default function Home() {
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 mb-6 leading-[1.1]">
             Get Your Custom <br />
-            <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">Meta Ads Strategy</span>
+            <span className="bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-purple-600">Meta Ads Strategy</span>
             —Free
           </h1>
 

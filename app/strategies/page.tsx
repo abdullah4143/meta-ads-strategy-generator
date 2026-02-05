@@ -5,7 +5,6 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Plus, ArrowRight, Calendar, Globe, Target, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Lead {
     id: string;
@@ -22,7 +21,7 @@ export default function StrategiesHistoryPage() {
     const router = useRouter();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
 
     useEffect(() => {
         const checkUserAndFetchLeads = async () => {
@@ -122,7 +121,7 @@ export default function StrategiesHistoryPage() {
                             <Globe size={32} />
                         </div>
                         <h2 className="text-xl font-bold text-gray-900 mb-2">No strategies found</h2>
-                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">You haven't generated any Meta Ads strategies yet. Start your first questionnaire now.</p>
+                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">You haven&apos;t generated any Meta Ads strategies yet. Start your first questionnaire now.</p>
                         <Link 
                             href="/questionnaire"
                             className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline"
