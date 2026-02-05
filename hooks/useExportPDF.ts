@@ -50,7 +50,11 @@ export const useExportPDF = () => {
                     width: totalWidth,
                     height: heightToCapture,
                     // Critical: Ignore the background radial dots that might crash heavy renders
-                    ignoreElements: (el) => el.classList.contains('fixed') || el.style.backgroundImage.includes('radial-gradient'),
+                    ignoreElements: (el) => {
+                        if (el.classList.contains('fixed')) return true;
+                        if (el instanceof HTMLElement && el.style.backgroundImage.includes('radial-gradient')) return true;
+                        return false;
+                    },
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG is much better for memory than PNG
