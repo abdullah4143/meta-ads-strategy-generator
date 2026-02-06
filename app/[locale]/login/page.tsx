@@ -2,11 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/routing';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 function LoginForm() {
+    const t = useTranslations();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -22,13 +25,20 @@ function LoginForm() {
             const code = searchParams.get('code');
             const errorParam = searchParams.get('error');
             const errorDesc = searchParams.get('error_description');
+            const verified = searchParams.get('verified');
+            const reset = searchParams.get('reset');
 
-            if (code) {
+            if (verified === 'true') {
+                setSuccessMessage('Email verified successfully! You can now sign in.');
+                window.history.replaceState({}, '', '/login');
+            } else if (reset === 'success') {
+                setSuccessMessage('Password reset successful! Please sign in with your new password.');
+                window.history.replaceState({}, '', '/login');
+            } else if (code) {
                 setLoading(true);
                 const { error } = await supabase.auth.exchangeCodeForSession(code);
                 if (!error) {
                     setSuccessMessage('Account verified successfully! Please sign in.');
-                    // Optional: Clear URL params without reloading
                     window.history.replaceState({}, '', '/login');
                 } else {
                     setError('Verification failed. The link may be invalid or expired.');
@@ -69,6 +79,9 @@ function LoginForm() {
 
             <div className="w-full max-w-[420px] bg-white rounded-[24px] shadow-sm border border-gray-100 p-8 relative z-10">
                 <div className="text-center mb-8">
+                    <div className="flex justify-end mb-4">
+                        <LanguageSwitcher />
+                    </div>
                     <div className="w-10 h-10 bg-black rounded-[8px] flex items-center justify-center text-white mx-auto mb-6 shadow-sm">
                         {/* Simple Logo Placeholder based on reference */}
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -77,32 +90,32 @@ function LoginForm() {
                             <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
-                    <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">Sign in</h1>
+                    <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">{t('auth.login.title')}</h1>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label htmlFor="email" className="sr-only">Email address</label>
+                        <label htmlFor="email" className="sr-only">{t('auth.login.email')}</label>
                         <input
                             id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="name@company.com"
+                            placeholder={t('auth.login.email')}
                             className="w-full h-[46px] px-4 rounded-[10px] bg-[#F2F4F7] border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400 text-sm"
                             required
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="sr-only">Password</label>
+                        <label htmlFor="password" className="sr-only">{t('auth.login.password')}</label>
                         <div className="relative">
                             <input
                                 id="password"
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Your password"
+                                placeholder={t('auth.login.password')}
                                 className="w-full h-[46px] px-4 rounded-[10px] bg-[#F2F4F7] border border-gray-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-gray-400 text-sm"
                                 required
                             />
@@ -117,7 +130,7 @@ function LoginForm() {
                     </div>
 
                     <div className="flex justify-end">
-                        <Link href="#" className="text-xs text-gray-500 hover:text-gray-900">Forgot password?</Link>
+                        <Link href="/forgot-password" className="text-xs text-gray-500 hover:text-gray-900 font-medium">{t('auth.login.forgotPassword')}</Link>
                     </div>
 
                     {error && (
@@ -137,7 +150,7 @@ function LoginForm() {
                         disabled={loading}
                         className="w-full h-[46px] bg-black text-white rounded-[10px] font-semibold text-sm hover:bg-gray-800 transition-all disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={18} /> : 'Sign In'}
+                        {loading ? <><Loader2 className="animate-spin" size={18} /> {t('auth.login.signingIn')}</> : t('auth.login.signIn')}
                     </button>
                 </form>
 
@@ -149,7 +162,7 @@ function LoginForm() {
 
                 <div className="text-center">
                     <p className="text-sm text-gray-500">
-                        Don&apos;t have an account? <Link href="/signup" className="text-blue-600 font-semibold hover:underline">Sign up</Link>
+                        {t('auth.login.noAccount')} <Link href="/signup" className="text-blue-600 font-semibold hover:underline">{t('auth.login.signUp')}</Link>
                     </p>
                 </div>
 

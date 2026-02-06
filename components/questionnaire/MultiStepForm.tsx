@@ -6,10 +6,45 @@ import { ChevronRight, ChevronLeft, Sparkles, Check, Loader2 } from 'lucide-reac
 import { useFormStore } from '@/store/useFormStore';
 import { QUESTIONNAIRE_DATA } from '@/config/questionnaire';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+
+// Helper function to get translated field label
+const getFieldLabel = (t: any, fieldId: string, originalLabel: string) => {
+    const key = `questionnaire.fields.${fieldId}`;
+    try {
+        return t(key);
+    } catch {
+        return originalLabel;
+    }
+};
+
+// Helper function to get translated field description
+const getFieldDescription = (t: any, fieldId: string, originalDesc?: string) => {
+    if (!originalDesc) return undefined;
+    const key = `questionnaire.fields.${fieldId}Desc`;
+    try {
+        return t(key);
+    } catch {
+        return originalDesc;
+    }
+};
+
+// Helper function to get translated placeholder
+const getFieldPlaceholder = (t: any, fieldId: string, originalPlaceholder?: string) => {
+    if (!originalPlaceholder) return undefined;
+    const key = `questionnaire.placeholders.${fieldId}`;
+    try {
+        return t(key);
+    } catch {
+        return originalPlaceholder;
+    }
+};
 
 export default function MultiStepForm() {
+    const t = useTranslations();
     const router = useRouter();
     const supabase = createClient();
     const { step, setStep, formData, updateFormData, resetForm } = useFormStore();
@@ -38,7 +73,7 @@ export default function MultiStepForm() {
 
     const handleNext = async () => {
         if (!validateStep()) {
-            setError('Please fill in all required fields.');
+            setError(t('questionnaire.requiredFields'));
             return;
         }
         setError(null);
@@ -67,10 +102,13 @@ export default function MultiStepForm() {
     const handleSubmit = async () => {
         setIsLoading(true);
         try {
+            // Use the selected response language from the form
+            const locale = formData.responseLanguage || 'en';
+            
             const response = await fetch('/api/generate-strategy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, locale }),
             });
 
             const result = await response.json();
@@ -79,11 +117,11 @@ export default function MultiStepForm() {
                 resetForm();
                 router.push(`/strategy/${result.leadId}?taskId=${result.taskId}`);
             } else {
-                setError(result.error || 'Failed to generate strategy.');
+                setError(result.error || t('questionnaire.generateError'));
                 setIsLoading(false);
             }
         } catch (error) {
-            setError("Something went wrong. Please try again.");
+            setError(t('questionnaire.submitError'));
             setIsLoading(false);
         }
     };
@@ -95,10 +133,10 @@ export default function MultiStepForm() {
                     <Sparkles className="text-blue-600 animate-spin-slow" size={32} />
                 </div>
                 <h2 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                    AI is analyzing your website...
+                    {t('questionnaire.analyzing')}
                 </h2>
                 <p className="text-gray-500 max-w-md">
-                    Generating Step-by-Step Campaign Plan, Ad Copies, and Targeting Strategy. <br />This takes about 45 seconds.
+                    {t('questionnaire.analyzingDesc')}
                 </p>
             </div>
         );
@@ -129,19 +167,19 @@ export default function MultiStepForm() {
                             <span className={cn(
                                 "text-[10px] font-black uppercase tracking-widest",
                                 step === s.step ? "text-blue-600" : "text-gray-400"
-                            )}>Step {s.step}</span>
+                            )}>{t('questionnaire.stepLabel', { step: s.step })}</span>
                             <span className={cn(
                                 "text-sm font-bold",
                                 step === s.step ? "text-gray-900" : "text-gray-500"
-                            )}>{s.title}</span>
+                            )}>{t(`questionnaire.steps.${s.step}.title`)}</span>
                         </div>
                     </div>
                 ))}
 
                 <div className="mt-auto p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-2 italic">Pro Tip</p>
+                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-2 italic">{t('questionnaire.proTip')}</p>
                     <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
-                        Provide a specific **Core Offer** to get 3x more accurate ad copy recommendations.
+                        {t('questionnaire.proTipDesc')}
                     </p>
                 </div>
             </div>
@@ -161,12 +199,15 @@ export default function MultiStepForm() {
                 <div className="p-8 md:p-12 lg:p-16 flex-1 flex flex-col text-gray-900">
                     {/* Header */}
                     <div className="mb-10 text-left">
-                        <div className="flex items-center gap-2 mb-3">
-                             <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                             <span className="text-[10px] font-black text-blue-600 tracking-[0.2em] uppercase">MetaGen Intelligence</span>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                <span className="text-[10px] font-black text-blue-600 tracking-[0.2em] uppercase">MetaGen Intelligence</span>
+                            </div>
+                            <LanguageSwitcher />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 tracking-tight">{currentStepData.header}</h1>
-                        <p className="text-gray-500 font-medium leading-relaxed max-w-xl">{currentStepData.subtext}</p>
+                        <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3 tracking-tight">{t(`questionnaire.steps.${step}.header`)}</h1>
+                        <p className="text-gray-500 font-medium leading-relaxed max-w-xl">{t(`questionnaire.steps.${step}.subtext`)}</p>
                     </div>
 
                     {/* Fields */}
@@ -187,20 +228,20 @@ export default function MultiStepForm() {
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-blue-600" />
                                                     <label className="block text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 group-focus-within:text-blue-600 transition-colors">
-                                                        {field.label}
+                                                        {getFieldLabel(t, field.id, field.label)}
                                                     </label>
                                                 </div>
                                                 {field.description && (
                                                     <p className="text-[11px] text-gray-400 font-medium leading-relaxed pl-4">
                                                         <span className="text-blue-600/60 font-black mr-1">TIPS:</span>
-                                                        {field.description}
+                                                        {getFieldDescription(t, field.id, field.description)}
                                                     </p>
                                                 )}
                                             </div>
                                             {field.required && (
                                                 <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100 mb-1">
                                                     <div className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-                                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Required</span>
+                                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">{t('questionnaire.required')}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -210,7 +251,7 @@ export default function MultiStepForm() {
                                             {field.type === 'text' || field.type === 'url' || field.type === 'email' || field.type === 'number' || field.type === 'date' ? (
                                                 <input
                                                     type={field.type}
-                                                    placeholder={field.placeholder}
+                                                    placeholder={getFieldPlaceholder(t, field.id, field.placeholder)}
                                                     // @ts-ignore
                                                     value={formData[field.id] || ''}
                                                     onChange={(e) => handleInputChange(field.id, e.target.value)}
@@ -218,7 +259,7 @@ export default function MultiStepForm() {
                                                 />
                                             ) : field.type === 'textarea' ? (
                                                 <textarea
-                                                    placeholder={field.placeholder}
+                                                    placeholder={getFieldPlaceholder(t, field.id, field.placeholder)}
                                                     // @ts-ignore
                                                     value={formData[field.id] || ''}
                                                     onChange={(e) => handleInputChange(field.id, e.target.value)}
@@ -233,7 +274,7 @@ export default function MultiStepForm() {
                                                         onChange={(e) => handleInputChange(field.id, e.target.value)}
                                                         className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-gray-50/50 hover:bg-white focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 outline-none transition-all font-semibold text-gray-900 appearance-none cursor-pointer"
                                                     >
-                                                        <option value="" disabled>Select an option</option>
+                                                        <option value="" disabled>{t('questionnaire.selectOption')}</option>
                                                         {field.options?.map(opt => (
                                                             <option key={opt} value={opt}>{opt}</option>
                                                         ))}
@@ -244,7 +285,16 @@ export default function MultiStepForm() {
                                                 </div>
                                             ) : field.type === 'radio-cards' ? (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {field.options?.map((opt: any) => (
+                                                    {field.options?.map((opt: any) => {
+                                                        // Try to get translated label and description for goal field
+                                                        const translatedLabel = field.id === 'goal' 
+                                                            ? t(`questionnaire.fields.goal${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}`) 
+                                                            : opt.label;
+                                                        const translatedDesc = field.id === 'goal'
+                                                            ? t(`questionnaire.fields.goal${opt.value.charAt(0).toUpperCase() + opt.value.slice(1)}Desc`)
+                                                            : opt.desc;
+                                                        
+                                                        return (
                                                         <button
                                                             key={opt.value}
                                                             type="button"
@@ -268,7 +318,7 @@ export default function MultiStepForm() {
                                                                 </div>
                                                                 {/* @ts-ignore */}
                                                                 {formData[field.id] === opt.value && (
-                                                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-100 px-2 py-0.5 rounded-full">Selected</div>
+                                                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-100 px-2 py-0.5 rounded-full">{t('questionnaire.selected')}</div>
                                                                 )}
                                                             </div>
                                                             <div className="space-y-1">
@@ -276,11 +326,12 @@ export default function MultiStepForm() {
                                                                     "text-sm font-black transition-colors",
                                                                     // @ts-ignore
                                                                     formData[field.id] === opt.value ? "text-blue-700" : "text-gray-900"
-                                                                )}>{opt.label}</span>
-                                                                <p className="text-[11px] font-medium text-gray-500 leading-snug">{opt.desc}</p>
+                                                                )}>{translatedLabel}</span>
+                                                                <p className="text-[11px] font-medium text-gray-500 leading-snug">{translatedDesc}</p>
                                                             </div>
                                                         </button>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : null}
                                         </div>
@@ -301,7 +352,7 @@ export default function MultiStepForm() {
                             )}
                         >
                             <ChevronLeft size={16} strokeWidth={3} />
-                            Back
+                            {t('questionnaire.back')}
                         </button>
 
                         <div className="flex items-center gap-4">
@@ -314,11 +365,11 @@ export default function MultiStepForm() {
                                 {step === 5 ? (
                                     <>
                                         <Sparkles size={16} />
-                                        Generate Strategy
+                                        {t('questionnaire.generateStrategy')}
                                     </>
                                 ) : (
                                     <>
-                                        Next Step
+                                        {t('questionnaire.nextStep')}
                                         <ChevronRight size={16} strokeWidth={3} />
                                     </>
                                 )}
@@ -328,7 +379,7 @@ export default function MultiStepForm() {
 
                     {currentStepData.footerNote && (
                         <p className="mt-6 text-[10px] text-gray-400 font-medium text-center italic leading-relaxed">
-                            {currentStepData.footerNote}
+                            {step === 5 ? t('questionnaire.fields.footerNote') : currentStepData.footerNote}
                         </p>
                     )}
                 </div>

@@ -2,14 +2,16 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, CheckCircle2, PlayCircle, BarChart3, Users, Zap, Target, LayoutTemplate, MousePointerClick, Check } from 'lucide-react';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { LANDING_COPY } from '@/config/copy';
 import { useFormStore } from '@/store/useFormStore';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { createClient } from '@/utils/supabase/client';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { Link } from '@/i18n/routing';
 
 export default function Home() {
+  const t = useTranslations();
   const router = useRouter();
   const resetForm = useFormStore((state) => state.resetForm);
   const supabase = createClient();
@@ -39,12 +41,13 @@ export default function Home() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
               <span className="font-extrabold text-lg">M</span>
             </div>
-            MetaGen
+            {t('common.metagen')}
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={handleStart} className="hidden md:block text-sm font-medium text-gray-600 hover:text-primary transition">Sign In</button>
+            <LanguageSwitcher />
+            <button onClick={handleStart} className="hidden md:block text-sm font-medium text-gray-600 hover:text-primary transition">{t('common.signIn')}</button>
             <button onClick={handleStart} className="bg-primary text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all">
-              Get Started
+              {t('common.getStarted')}
             </button>
           </div>
         </div>
@@ -60,17 +63,15 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
             </span>
-            {LANDING_COPY.pill}
+            {t('home.pill')}
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 mb-6 leading-[1.1]">
-            Get Your Custom <br />
-            <span className="bg-clip-text text-transparent bg-linear-to-r from-blue-600 to-purple-600">Meta Ads Strategy</span>
-            —Free
+            {t('home.title')}
           </h1>
 
           <p className="text-lg md:text-xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed">
-            {LANDING_COPY.hero.subheadline}
+            {t('home.subtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -78,25 +79,25 @@ export default function Home() {
               onClick={handleStart}
               className="w-full sm:w-auto bg-primary text-white h-14 px-8 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-1 transition-all"
             >
-              {LANDING_COPY.hero.cta}
+              {t('home.cta')}
               <ArrowRight size={20} />
             </button>
             <Link
               href="/samples"
               className="w-full sm:w-auto bg-white text-gray-700 h-14 px-8 rounded-xl font-bold text-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center"
             >
-              {LANDING_COPY.hero.secondaryCta}
+              {t('home.secondaryCta')}
             </Link>
           </div>
 
           <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium text-gray-500">
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-green-500" />
-              <span>No credit card required</span>
+              <span>{t('home.noCreditCard')}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-green-500" />
-              <span>Generated in 45 seconds</span>
+              <span>{t('home.generatedIn')}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-green-500" />
@@ -109,19 +110,19 @@ export default function Home() {
         <div className="max-w-6xl mx-auto bg-white rounded-2xl border border-gray-100 p-8 shadow-sm mb-32 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-md">
             <h3 className="font-bold text-lg mb-1">Trusted by 200+ Businesses</h3>
-            <p className="text-gray-500 text-sm">{LANDING_COPY.socialProof.text}</p>
+            <p className="text-gray-500 text-sm">Join successful companies generating winning Meta Ads strategies.</p>
           </div>
           <div className="flex items-center gap-12 text-center">
             <div>
-              <div className="text-3xl font-bold text-gray-900">{LANDING_COPY.socialProof.strategies}</div>
+              <div className="text-3xl font-bold text-gray-900">500+</div>
               <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">Strategies</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">{LANDING_COPY.socialProof.thisWeek}</div>
+              <div className="text-3xl font-bold text-gray-900">42</div>
               <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">This Week</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900">{LANDING_COPY.socialProof.businesses}</div>
+              <div className="text-3xl font-bold text-gray-900">200+</div>
               <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">Clients</div>
             </div>
           </div>
@@ -130,41 +131,68 @@ export default function Home() {
         {/* How It Works */}
         <div className="max-w-6xl mx-auto mb-32">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How it works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('home.howItWorks.title')}</h2>
             <p className="text-gray-500">Three simple steps to your new ad campaign.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {LANDING_COPY.process.steps.map((step, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                <div className="w-12 h-12 bg-primary rounded-xl text-white flex items-center justify-center font-bold text-xl mb-6 relative z-10">
-                  {i + 1}
-                </div>
-                <h3 className="text-xl font-bold mb-3 relative z-10">{step.title}</h3>
-                <p className="text-gray-500 leading-relaxed relative z-10">{step.desc}</p>
-              </div>
-            ))}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+              <div className="w-12 h-12 bg-primary rounded-xl text-white flex items-center justify-center font-bold text-xl mb-6 relative z-10">1</div>
+              <h3 className="text-xl font-bold mb-3 relative z-10">{t('home.howItWorks.step1')}</h3>
+              <p className="text-gray-500 leading-relaxed relative z-10">{t('home.howItWorks.step1Desc')}</p>
+            </div>
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+              <div className="w-12 h-12 bg-primary rounded-xl text-white flex items-center justify-center font-bold text-xl mb-6 relative z-10">2</div>
+              <h3 className="text-xl font-bold mb-3 relative z-10">{t('home.howItWorks.step2')}</h3>
+              <p className="text-gray-500 leading-relaxed relative z-10">{t('home.howItWorks.step2Desc')}</p>
+            </div>
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
+              <div className="w-12 h-12 bg-primary rounded-xl text-white flex items-center justify-center font-bold text-xl mb-6 relative z-10">3</div>
+              <h3 className="text-xl font-bold mb-3 relative z-10">{t('home.howItWorks.step3')}</h3>
+              <p className="text-gray-500 leading-relaxed relative z-10">{t('home.howItWorks.step3Desc')}</p>
+            </div>
           </div>
         </div>
 
         {/* Features Grid */}
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What you get</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('home.features.title')}</h2>
             <p className="text-gray-500">A complete strategy document ready for execution.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {LANDING_COPY.features.map((feature, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 transition-colors group">
-                <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-primary mb-4 shadow-sm group-hover:scale-110 transition-transform">
-                  <Check size={20} strokeWidth={3} />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
+            <div className="p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 transition-colors group">
+              <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-primary mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                <Check size={20} strokeWidth={3} />
               </div>
-            ))}
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.features.aiPowered')}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{t('home.features.aiPoweredDesc')}</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 transition-colors group">
+              <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-primary mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                <Check size={20} strokeWidth={3} />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.features.fullFunnel')}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{t('home.features.fullFunnelDesc')}</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 transition-colors group">
+              <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-primary mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                <Check size={20} strokeWidth={3} />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.features.exportable')}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{t('home.features.exportableDesc')}</p>
+            </div>
+            <div className="p-6 rounded-2xl bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 transition-colors group">
+              <div className="w-10 h-10 bg-white rounded-lg border border-gray-100 flex items-center justify-center text-primary mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                <Check size={20} strokeWidth={3} />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-2">{t('home.features.proven')}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{t('home.features.provenDesc')}</p>
+            </div>
           </div>
         </div>
 
@@ -175,9 +203,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2 font-bold text-gray-900">
             <div className="w-6 h-6 bg-primary rounded flex items-center justify-center text-white text-xs">M</div>
-            MetaGen
+            {t('common.metagen')}
           </div>
-          <p className="text-sm text-gray-400">© 2024 MetaGen AI. Powered by Manus.</p>
+          <p className="text-sm text-gray-400">© 2026 MetaGen AI. Powered by Manus.</p>
         </div>
       </footer>
     </div>

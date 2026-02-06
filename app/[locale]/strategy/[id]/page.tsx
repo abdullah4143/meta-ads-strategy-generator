@@ -4,10 +4,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Download, Calendar, ArrowLeft, Loader2, Share2, CheckCircle, Sparkles, Target, Award, Zap, BarChart3, TrendingUp, Info } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useManusPolling } from '@/hooks/useManusPolling';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface Lead {
     id: string;
@@ -17,31 +20,48 @@ interface Lead {
     contact_email: string;
 }
 
-const STATUS_MESSAGES = [
-    "Analyzing your website and brand voice...",
-    "Researching your target audience demographics...",
-    "Segmenting high-intent buyer personas...",
-    "Drafting full-funnel marketing campaigns...",
-    "Crafting direct-response ad copy variations...",
-    "Optimizing budget for maximum ROI...",
-    "Building your custom roadmap to scale..."
-];
-
-// Filter out conversational filler (intro preambles)
+// Filter out conversational filler and extract the actual strategy
 const cleanMarkdown = (text: string) => {
     if (!text) return '';
 
-    // If the text starts with a header, it's likely clean
-    if (text.trim().startsWith('#')) return text.trim();
-
-    // Otherwise, try to find the first header
-    const firstHeaderIndex = text.indexOf('#');
-    if (firstHeaderIndex !== -1) {
-        return text.substring(firstHeaderIndex).trim();
+    // Remove "Task initiated" messages
+    if (text.includes('Task initiated')) {
+        return text;
     }
 
-    // Fallback: If no header found, just return original (or maybe try to strip first paragraph?)
-    return text.trim();
+    let cleaned = text.trim();
+
+    // Remove introductory paragraphs like "I have completed a comprehensive..."
+    const commonIntros = [
+        /^I have completed a comprehensive.+?\n\n/s,
+        /^I've completed a comprehensive.+?\n\n/s,
+        /^Here is a comprehensive.+?\n\n/s,
+        /^Here's a comprehensive.+?\n\n/s,
+        /^I've created a comprehensive.+?\n\n/s,
+        /^I have created a comprehensive.+?\n\n/s,
+    ];
+
+    for (const pattern of commonIntros) {
+        cleaned = cleaned.replace(pattern, '');
+    }
+
+    // Remove "## Document Overview" sections before the actual strategy
+    cleaned = cleaned.replace(/^##\s+Document Overview[\s\S]*?(?=^#\s+[^#])/m, '');
+    cleaned = cleaned.replace(/^##\s+Key Strategy Highlights[\s\S]*?(?=^#\s+[^#])/m, '');
+    
+    // If the text starts with a header, it's clean
+    if (cleaned.trim().startsWith('#')) {
+        return cleaned.trim();
+    }
+
+    // Try to find the first main header (single #)
+    const firstHeaderIndex = cleaned.indexOf('\n# ');
+    if (firstHeaderIndex !== -1) {
+        return cleaned.substring(firstHeaderIndex + 1).trim();
+    }
+
+    // Fallback: return as-is
+    return cleaned.trim();
 };
 
 const extractText = (node: any): string => {
@@ -54,6 +74,7 @@ const extractText = (node: any): string => {
 };
 
 export default function StrategyResult() {
+    const t = useTranslations();
     const params = useParams();
     const searchParams = useSearchParams();
     const id = params?.id as string;
@@ -67,6 +88,16 @@ export default function StrategyResult() {
     const [taskId, setTaskId] = useState<string | null>(taskIdFromUrl);
     const [statusIndex, setStatusIndex] = useState(0);
     const [copied, setCopied] = useState(false);
+
+    const STATUS_MESSAGES = [
+        t('strategies.statusAnalyzing'),
+        t('strategies.statusResearching'),
+        t('strategies.statusSegmenting'),
+        t('strategies.statusDrafting'),
+        t('strategies.statusCrafting'),
+        t('strategies.statusOptimizing'),
+        t('strategies.statusBuilding')
+    ];
 
     const polling = useManusPolling(
         lead?.strategy_markdown?.includes('Task initiated') ? taskId : null,
@@ -121,11 +152,27 @@ export default function StrategyResult() {
         if (!id) return;
 
         const fetchLead = async () => {
+            // Get the current user first
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                // Redirect to login if not authenticated
+                window.location.href = '/login';
+                return;
+            }
+
             const { data, error } = await supabase
                 .from('leads')
                 .select('*')
                 .eq('id', id)
+                .eq('user_id', user.id)
                 .single();
+
+            if (error) {
+                console.error('Error fetching lead:', error);
+                setLoading(false);
+                return;
+            }
 
             if (data) {
                 setLead(data);
@@ -179,8 +226,8 @@ export default function StrategyResult() {
     if (!lead) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Strategy Not Found</h2>
-                <button onClick={handleCreateNew} className="text-blue-600 hover:underline">Create a new strategy</button>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{t('strategies.notFound')}</h2>
+                <button onClick={handleCreateNew} className="text-blue-600 hover:underline">{t('strategies.createNew')}</button>
             </div>
         );
     }
@@ -197,13 +244,14 @@ export default function StrategyResult() {
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <Link href="/strategies" className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors self-start md:self-auto">
                         <ArrowLeft size={20} />
-                        <span className="font-medium text-sm">Back to Strategies</span>
+                        <span className="font-medium text-sm">{t('strategies.backToStrategies')}</span>
                     </Link>
 
                     <div className="flex items-center gap-3">
+                        <LanguageSwitcher />
                         {lead?.ghl_synced && (
                             <span className="flex items-center gap-1.5 text-[10px] font-semibold text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                                <CheckCircle size={10} /> CRM Synced
+                                <CheckCircle size={10} /> {t('strategies.crmSynced')}
                             </span>
                         )}
 
@@ -212,7 +260,7 @@ export default function StrategyResult() {
                             className="flex items-center gap-2 bg-white text-gray-600 px-4 py-2 rounded-xl font-semibold border border-gray-100 hover:bg-gray-50 transition shadow-sm active:scale-95 text-sm no-print"
                         >
                             {copied ? <CheckCircle size={16} className="text-green-600" /> : <Share2 size={16} />}
-                            <span>{copied ? 'Copied' : 'Share'}</span>
+                            <span>{copied ? t('strategies.copied') : t('strategies.share')}</span>
                         </button>
 
                         <button
@@ -220,7 +268,7 @@ export default function StrategyResult() {
                             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg hover:shadow-blue-500/20 active:scale-95 text-sm no-print"
                         >
                             <Download size={16} />
-                            <span>Export PDF</span>
+                            <span>{t('strategies.exportPdf')}</span>
                         </button>
                     </div>
                 </div>
@@ -239,9 +287,9 @@ export default function StrategyResult() {
                                     <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 animate-bounce shadow-inner">
                                         <Sparkles className="text-blue-600" size={32} />
                                     </div>
-                                    <h2 className="text-2xl font-black text-gray-900 mb-2">Generating Your Strategy...</h2>
+                                    <h2 className="text-2xl font-black text-gray-900 mb-2">{t('strategies.generatingStrategy')}</h2>
                                     <p className="text-gray-500 text-sm max-w-sm mb-8 leading-relaxed font-medium">
-                                        Our AI is analyzing your audience and budget to build a custom high-converting plan. This typically takes 30-60 seconds.
+                                        {t('strategies.generatingDesc')}
                                     </p>
 
                                     <div className="w-full max-w-xs bg-gray-100 h-1.5 rounded-full overflow-hidden mb-6">
@@ -268,9 +316,9 @@ export default function StrategyResult() {
                                         <div className="absolute inset-0 bg-blue-600/10 animate-[pulse_2s_infinite]" />
                                         <Sparkles className="text-blue-600 animate-bounce" size={32} />
                                     </div>
-                                    <h2 className="text-2xl font-black text-gray-900 mb-2">Almost Ready...</h2>
+                                    <h2 className="text-2xl font-black text-gray-900 mb-2">{t('strategies.almostReady')}</h2>
                                     <p className="text-gray-500 text-sm max-w-sm mb-8 leading-relaxed font-medium">
-                                        AI has started writing your strategy. We are now expanding the sections and finalizing the details.
+                                        {t('strategies.almostReadyDesc')}
                                     </p>
 
                                     <div className="flex items-center gap-3 bg-blue-50 px-5 py-2.5 rounded-full text-[11px] font-black tracking-[0.15em] text-blue-700 uppercase shadow-sm border border-blue-100">
@@ -308,6 +356,7 @@ export default function StrategyResult() {
                                     </AnimatePresence>
 
                                     <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
                                         components={{
                                             h1: ({ children }) => (
                                                 <div className="mb-10 border-b border-gray-100 pb-6 pt-2">
@@ -433,15 +482,54 @@ export default function StrategyResult() {
                                                 <strong className="font-black text-blue-700">{children}</strong>
                                             ),
                                             blockquote: ({ children }) => (
-                                                <div className="relative bg-gray-900 p-6 rounded-2xl my-10 border-l-8 border-blue-600 shadow-xl">
-                                                    <div className="text-white text-base font-bold italic leading-relaxed">
+                                                <div className="relative bg-blue-50 p-6 rounded-2xl my-10 border-l-8 border-blue-600 shadow-lg">
+                                                    <div className="text-gray-900 text-base font-bold italic leading-relaxed">
                                                         "{children}"
                                                     </div>
-                                                    <div className="mt-3 text-blue-400 font-black uppercase tracking-[0.2em] text-[10px]">
+                                                    <div className="mt-3 text-blue-600 font-black uppercase tracking-[0.2em] text-[10px]">
                                                         Expert Implementation Insight
                                                     </div>
                                                 </div>
                                             ),
+                                            table: ({ children }) => (
+                                                <div className="overflow-x-auto my-8 rounded-2xl border border-gray-200 shadow-sm">
+                                                    <table className="w-full border-collapse">{children}</table>
+                                                </div>
+                                            ),
+                                            thead: ({ children }) => (
+                                                <thead className="bg-blue-50">{children}</thead>
+                                            ),
+                                            tbody: ({ children }) => (
+                                                <tbody className="bg-white">{children}</tbody>
+                                            ),
+                                            tr: ({ children }) => (
+                                                <tr className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">{children}</tr>
+                                            ),
+                                            th: ({ children }) => (
+                                                <th className="px-6 py-4 text-left text-xs font-black text-blue-900 uppercase tracking-wider border-b-2 border-blue-200">
+                                                    {children}
+                                                </th>
+                                            ),
+                                            td: ({ children }) => (
+                                                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{children}</td>
+                                            ),
+                                            hr: () => (
+                                                <hr className="my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                                            ),
+                                            code: ({ inline, children }: any) => {
+                                                if (inline) {
+                                                    return (
+                                                        <code className="bg-blue-50 text-blue-700 px-2 py-1 rounded font-mono text-sm font-semibold">
+                                                            {children}
+                                                        </code>
+                                                    );
+                                                }
+                                                return (
+                                                    <code className="block bg-gray-50 text-gray-800 p-4 rounded-xl font-mono text-sm overflow-x-auto border border-gray-200">
+                                                        {children}
+                                                    </code>
+                                                );
+                                            },
                                         }}
                                     >
                                         {cleanMarkdown(polling.output || lead?.strategy_markdown || '')}
@@ -459,21 +547,21 @@ export default function StrategyResult() {
                     <div className="space-y-6">
 
                         {/* CTA Card */}
-                        <div className="bg-gray-900 p-6 md:p-8 rounded-4xl text-white shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600 rounded-full blur-[80px] opacity-20 -translate-y-24 translate-x-24" />
+                        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 md:p-8 rounded-4xl text-white shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-white rounded-full blur-[80px] opacity-10 -translate-y-24 translate-x-24" />
 
                             <div className="relative z-10">
-                                <h3 className="text-xl font-black mb-3 leading-tight italic uppercase tracking-tighter">Ready to Scale?</h3>
-                                <p className="text-gray-400 mb-6 text-sm font-medium leading-relaxed">
-                                    This plan is just the architecture. Our elite team can handle the <span className="text-blue-400">media buying</span>, <span className="text-blue-400">creative production</span>, and <span className="text-blue-400">CRO</span> to turn this into profit.
+                                <h3 className="text-xl font-black mb-3 leading-tight italic uppercase tracking-tighter">{t('strategies.readyToScale')}</h3>
+                                <p className="text-blue-50 mb-6 text-sm font-medium leading-relaxed">
+                                    {t('strategies.readyToScaleDesc')}
                                 </p>
 
                                 <a
                                     href={process.env.NEXT_PUBLIC_CALENDLY_URL || "#"}
                                     target="_blank"
-                                    className="flex items-center justify-center gap-2 bg-white text-gray-900 px-6 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-xl text-[10px]"
+                                    className="flex items-center justify-center gap-2 bg-white text-blue-600 px-6 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-50 hover:shadow-2xl transition-all duration-300 shadow-xl text-[10px]"
                                 >
-                                    Book Scaling Call
+                                    {t('strategies.bookCall')}
                                     <Zap size={14} fill="currentColor" />
                                 </a>
                             </div>
@@ -482,16 +570,16 @@ export default function StrategyResult() {
                         {/* Guidance & Actions Card */}
                         <div className="bg-white p-6 md:p-8 rounded-4xl border-2 border-gray-50 shadow-sm space-y-8">
                             <div>
-                                <h4 className="text-gray-400 font-black uppercase tracking-widest text-[9px] mb-4">Pro Tips & Guidance</h4>
+                                <h4 className="text-gray-400 font-black uppercase tracking-widest text-[9px] mb-4">{t('strategies.proTips')}</h4>
                                 <div className="space-y-6">
                                     <div className="flex gap-4">
                                         <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
                                             <Download size={18} className="text-blue-600" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight">Save for Reference</p>
+                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{t('strategies.saveReference')}</p>
                                             <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                                                Click the <span className="text-blue-600 font-bold">Export PDF</span> button above to save this strategy locally before closing the window.
+                                                {t('strategies.saveReferenceDesc')}
                                             </p>
                                         </div>
                                     </div>
@@ -501,9 +589,9 @@ export default function StrategyResult() {
                                             <Info size={18} className="text-gray-400" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-gray-400 uppercase tracking-tight">Stream Issues?</p>
+                                            <p className="text-xs font-black text-gray-400 uppercase tracking-tight">{t('strategies.streamIssues')}</p>
                                             <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                                                If the content stops loading or isn't visible, try refreshing the page. The AI may still be finalizing the draft in the background.
+                                                {t('strategies.streamIssuesDesc')}
                                             </p>
                                         </div>
                                     </div>
@@ -513,9 +601,9 @@ export default function StrategyResult() {
                                             <CheckCircle size={18} className="text-green-600" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight">Execution Ready</p>
+                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{t('strategies.executionReady')}</p>
                                             <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                                                This strategy uses the <span className="font-bold">AIDA framework</span> and is optimized for manual or Advantage+ Meta Ads campaigns.
+                                                {t('strategies.executionReadyDesc')}
                                             </p>
                                         </div>
                                     </div>

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, Link } from '@/i18n/routing';
 import { Loader2, Plus, ArrowRight, Calendar, Globe, Target, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface Lead {
     id: string;
@@ -17,6 +18,7 @@ interface Lead {
 }
 
 export default function StrategiesHistoryPage() {
+    const t = useTranslations();
     const supabase = createClient();
     const router = useRouter();
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -32,12 +34,16 @@ export default function StrategiesHistoryPage() {
             }
             setUser(session.user);
 
+            // Fetch only the current user's leads
             const { data, error } = await supabase
                 .from('leads')
                 .select('*')
+                .eq('user_id', session.user.id)
                 .order('created_at', { ascending: false });
 
-            if (!error && data) {
+            if (error) {
+                console.error('Error fetching leads:', error);
+            } else if (data) {
                 setLeads(data);
             }
             setLoading(false);
@@ -61,6 +67,7 @@ export default function StrategiesHistoryPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
                 <Loader2 className="animate-spin text-blue-600" size={32} />
+                <span className="ml-3 text-gray-600">{t('common.loading')}</span>
             </div>
         );
     }
@@ -86,11 +93,12 @@ export default function StrategiesHistoryPage() {
                              <User size={16} />
                              <span>{user?.email}</span>
                         </div>
+                        <LanguageSwitcher />
                         <button 
                             onClick={handleSignOut}
                             className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
                         >
-                            Sign out
+                            {t('common.signOut')}
                         </button>
                     </div>
                 </div>
@@ -101,17 +109,17 @@ export default function StrategiesHistoryPage() {
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Welcome back, {firstName}</span>
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{t('strategies.welcomeBack', { name: firstName })}</span>
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Your Strategies</h1>
-                        <p className="text-gray-500 mt-2 text-sm">View and manage your AI-generated Meta Ads strategies history.</p>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('strategies.title')}</h1>
+                        <p className="text-gray-500 mt-2 text-sm">{t('strategies.subtitle')}</p>
                     </div>
                     <Link 
                         href="/questionnaire"
                         className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.02] transition-all active:scale-95"
                     >
                         <Plus size={18} />
-                        New Strategy
+                        {t('strategies.newStrategy')}
                     </Link>
                 </div>
 
@@ -120,13 +128,13 @@ export default function StrategiesHistoryPage() {
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
                             <Globe size={32} />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">No strategies found</h2>
-                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">You haven&apos;t generated any Meta Ads strategies yet. Start your first questionnaire now.</p>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">{t('strategies.emptyTitle')}</h2>
+                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">{t('strategies.emptyDescription')}</p>
                         <Link 
                             href="/questionnaire"
                             className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline"
                         >
-                            Get Started <ArrowRight size={18} />
+                            {t('strategies.getStarted')} <ArrowRight size={18} />
                         </Link>
                     </div>
                 ) : (

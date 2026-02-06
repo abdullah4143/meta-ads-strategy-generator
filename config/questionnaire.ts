@@ -113,7 +113,18 @@ export const QUESTIONNAIRE_DATA: QuestionnaireStep[] = [
         subtext: "Where should we send your custom strategy?",
         fields: [
             { id: "contactName", label: "Full Name *", type: "text", placeholder: "John Smith", required: true },
-            { id: "contactEmail", label: "Work Email *", type: "email", placeholder: "john@company.com", required: true }
+            { id: "contactEmail", label: "Work Email *", type: "email", placeholder: "john@company.com", required: true },
+            {
+                id: "responseLanguage",
+                label: "Strategy Language *",
+                type: "radio-cards",
+                description: "Choose the language for your AI-generated strategy document",
+                required: true,
+                options: [
+                    { value: "en", label: "English", desc: "Generate strategy in English" },
+                    { value: "lv", label: "Latviešu", desc: "Ģenerēt stratēģiju latviešu valodā" }
+                ]
+            }
         ],
         footerNote: "Note: Your privacy is important. We only use this data to generate your strategy."
     }

@@ -14,9 +14,15 @@ export async function POST(req: Request) {
     try {
         const { data: { user } } = await supabase.auth.getUser();
 
+        // Determine the language for the AI response (default to 'en' if not provided)
+        const locale = body.locale || 'en';
+        const language = locale === 'lv' ? 'Latvian' : 'English';
+
         // 1. Prepare the Prompt
         const promptString = `You are a world-class senior Meta Ads expert and Media Buyer with 10+ years of experience in direct-response marketing. 
         Create a comprehensive, high-converting Meta Ads strategy for "${body.businessName}".
+        
+        CRITICAL: Generate the ENTIRE strategy document in ${language} language. All sections, headings, descriptions, ad copy, and recommendations must be written in ${language}. ${language === 'Latvian' ? 'Use formal Latvian language appropriate for professional business context.' : ''}
         
         CORE BUSINESS INTELLIGENCE:
         - Website: ${body.website}
@@ -35,20 +41,36 @@ export async function POST(req: Request) {
         - Previous Experience: ${body.previousExperience}
         - Desired Duration: ${body.duration}
         
+        CRITICAL MARKET CONSIDERATIONS:
+        - ALWAYS analyze the website and strategy through the lens of the TARGET GEOGRAPHY (${body.location})
+        - Consider local market dynamics, language, cultural nuances, and business practices specific to ${body.location}
+        - Tailor all recommendations to be relevant for businesses operating primarily in ${body.location}
+        
+        META ADVANTAGE+ BEST PRACTICES (MANDATORY):
+        - For SMALL COUNTRIES (Latvia, Estonia, Lithuania, etc.): Recommend audiences of at least 100,000+ people
+        - For MEDIUM COUNTRIES (Netherlands, Belgium, Switzerland, etc.): Recommend audiences of at least 250,000+ people  
+        - For LARGE COUNTRIES (USA, UK, Germany, France, etc.): Recommend audiences of at least 500,000+ people
+        - ALWAYS prioritize Advantage+ Shopping Campaigns and broad targeting over narrow interest-based targeting
+        - Emphasize automated placements, dynamic creative, and letting Meta's algorithm optimize delivery
+        - Recommend testing Broad Audiences first before trying detailed targeting
+        - Suggest multiple ad sets only when testing significantly different value propositions or offers
+        
         INSTRUCTIONS:
-        1. FIRST, browse the provided website to understand their brand voice and product quality.
+        1. FIRST, browse the provided website to understand their brand voice, product quality, and market positioning IN THE CONTEXT OF ${body.location}
         2. THEN, write a full-funnel Meta Ads campaign plan including:
-           - Concise Website Analysis (1-2 sentences).
-           - Campaign Structure (TOFU/MOFU/BOFU) specifically for "${body.offerTitle}".
-           - 2 Detailed Buyer Personas with Meta targeting specifics.
-           - 2 High-Converting "AIDA" Ad Copy Hooks.
-           - Budget Allocation & Scaling Roadmap.
+           - Concise Website Analysis (2-3 sentences) that considers the local market context
+           - Campaign Structure (TOFU/MOFU/BOFU) optimized for Advantage+ and "${body.offerTitle}"
+           - 2 Detailed Buyer Personas with Meta Advantage+ targeting specifics (ensuring minimum audience sizes)
+           - 2 High-Converting "AIDA" Ad Copy Hooks that resonate with the local market
+           - Budget Allocation & Scaling Roadmap following Meta best practices
         
         OUTPUT RULES:
-        - Use professional, high-impact Markdown.
-        - Ensure total word count is between 800 - 1000 words.
-        - The strategy must be actionable and ready for manual or Advantage+ implementation.
-        - Do not just browse; provide the FINAL COMPLETE STRATEGY DOCUMENT.`;
+        - Use professional, high-impact Markdown with proper tables for budget breakdown
+        - Ensure total word count is between 1000 - 1500 words
+        - The strategy MUST be actionable and optimized for Meta Advantage+ implementation
+        - Include specific audience size estimates and ensure they meet the minimum thresholds above
+        - Do not just browse; provide the FINAL COMPLETE STRATEGY DOCUMENT with all sections
+        - Always consider ${body.location} market specifics in your recommendations`;
 
         // 2. Call Manus AI
         const manusResponse = await fetch('https://api.manus.ai/v1/tasks', {
