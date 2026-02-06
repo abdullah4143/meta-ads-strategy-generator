@@ -84,6 +84,7 @@
       "passwordMismatch": "Passwords do not match",
       "passwordTooShort": "Password should be at least 6 characters",
       "sendOtpError": "Failed to send verification code",
+      "emailExists": "An account with this email already exists",
       "verifyHeading": "Verify Your Account",
       "checkSpam": "Can't find it? Check your spam folder.",
       "proceedToLogin": "Proceed to Login",

@@ -57,7 +57,12 @@ export default function SignupPage() {
         setLoading(false);
 
         if (!response.ok) {
-            setError(data.error || t('auth.signup.sendOtpError'));
+            // Handle specific error cases
+            if (response.status === 409) {
+                setError(t('auth.signup.emailExists'));
+            } else {
+                setError(data.error || t('auth.signup.sendOtpError'));
+            }
         } else {
             // Redirect to OTP verification page
             router.push(`/verify-otp?email=${encodeURIComponent(email)}&type=signup`);

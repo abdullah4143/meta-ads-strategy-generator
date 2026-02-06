@@ -84,6 +84,7 @@
       "passwordMismatch": "Paroles nesakrīt",
       "passwordTooShort": "Parolei jābūt vismaz 6 rakstzīmēm",
       "sendOtpError": "Neizdevās nosūtīt verificēšanas kodu",
+      "emailExists": "Konts ar šo e-pastu jau eksistē",
       "verifyHeading": "Verificē savu kontu",
       "checkSpam": "Neatrodi? Pārbaudi surogātpasta mapi.",
       "proceedToLogin": "Turpināt uz pieteikšanos",

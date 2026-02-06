@@ -33,7 +33,17 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            // Check if email already exists
+            // Check if user already exists in auth.users (prevent duplicate signups)
+            const { data: existingAuthUser } = await supabase.auth.admin.getUserByEmail(normalizedEmail);
+            
+            if (existingAuthUser?.user) {
+                return NextResponse.json(
+                    { error: 'An account with this email already exists' },
+                    { status: 409 }
+                );
+            }
+
+            // Check if email already exists in pending_users
             const { data: existingUser } = await supabase
                 .from('pending_users')
                 .select('email')
